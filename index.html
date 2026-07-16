@@ -550,26 +550,27 @@ async function exportCard(mode){
   /* 내보내기 */
   cv.toBlob(async blob=>{
     const file = new File([blob], "감정작명소.png", {type:"image/png"});
+    const shareText = '오늘 내 감정의 이름: "'+r.name+'"\n너의 오늘엔 무슨 이름이 붙을까?\nhttps://'+SITE_URL;
     if(mode==="share" && navigator.canShare && navigator.canShare({files:[file]})){
       try{
-        await navigator.share({
-          files:[file],
-          title:"감정 작명소",
-          text:'오늘 내 감정의 이름: "'+r.name+'"\n너의 오늘엔 무슨 이름이 붙을까?\nhttps://'+SITE_URL
-        });
+        await navigator.share({ files:[file], title:"감정 작명소", text: shareText });
         return;
       }catch(e){ if(e.name==="AbortError") return; }
     }
-    if(mode==="share" && navigator.share){
-      try{
-        await navigator.share({title:"감정 작명소", text:'오늘 내 감정의 이름: "'+r.name+'"', url:"https://"+SITE_URL});
-        return;
-      }catch(e){ if(e.name==="AbortError") return; }
-    }
+    /* PC 폴백: 이미지 저장 + 문구 복사 동시 */
     const a=document.createElement("a");
     a.href=URL.createObjectURL(blob); a.download="감정작명소_"+r.name+".png";
     a.click(); URL.revokeObjectURL(a.href);
-    toast("이미지를 저장했어요. 스토리에 올려보세요!");
+    if(mode==="share"){
+      try{
+        await navigator.clipboard.writeText(shareText);
+        toast("이미지 저장 + 공유 문구 복사 완료! 붙여넣기만 하세요.");
+      }catch(e){
+        toast("이미지를 저장했어요. 폰에서는 바로 공유돼요!");
+      }
+    }else{
+      toast("이미지를 저장했어요. 스토리에 올려보세요!");
+    }
   }, "image/png");
 }
 
